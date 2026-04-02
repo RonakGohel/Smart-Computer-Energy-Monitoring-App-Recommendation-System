@@ -1,3 +1,4 @@
+!pip install psutil
 import psutil
 import time
 import csv
@@ -16,18 +17,25 @@ def get_system_metrics():
     memory = psutil.virtual_memory()
     ram_percent = memory.percent
     
-    # Battery information (if available)
-    battery = psutil.sensors_battery()
-    battery_percent = battery.percent if battery else "N/A"
-    power_plugged = battery.power_plugged if battery else "N/A"
+    # Battery information (Handled with try/except for Cloud environments)
+    battery_percent = "N/A"
+    power_plugged = "N/A"
+    
+    try:
+        battery = psutil.sensors_battery()
+        if battery:
+            battery_percent = battery.percent
+            power_plugged = battery.power_plugged
+    except Exception:
+        # If the hardware doesn't support battery sensing (like Colab), 
+        # we just keep the "N/A" values.
+        pass
     
     # Identify the 'Top App' by CPU consumption
     top_process_name = "System"
     max_cpu = 0
     for proc in psutil.process_iter(['name', 'cpu_percent']):
         try:
-            # Note: The first call to cpu_percent might be 0; 
-            # tracking over time is more accurate.
             current_cpu = proc.info['cpu_percent']
             if current_cpu > max_cpu:
                 max_cpu = current_cpu
