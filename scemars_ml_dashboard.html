@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCEMARS · ML Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #04080f;
+  --s1:       #080f1c;
+  --s2:       #0b1422;
+  --s3:       #0f1d30;
+  --cyan:     #00f0c8;
+  --amber:    #ffb800;
+  --red:      #ff4d6d;
+  --purple:   #b388ff;
+  --muted:    #4a6180;
+  --text:     #d4e4f7;
+  --border:   rgba(0,240,200,0.1);
+  --border2:  rgba(0,240,200,0.06);
+  --glow:     rgba(0,240,200,0.15);
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'Syne', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,200,0.012) 2px,
+    rgba(0,240,200,0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Nav ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  height: 52px;
+  background: rgba(4,8,15,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  animation: blink 2s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  transition: all 0.4s;
+}
+.status-chip.online  { color: var(--cyan);  border-color: rgba(0,240,200,0.3); background: rgba(0,240,200,0.06); }
+.status-chip.offline { color: var(--red);   border-color: rgba(255,77,109,0.3); background: rgba(255,77,109,0.06); }
+.status-chip .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* ── Layout ── */
+.container { max-width: 1280px; margin: 0 auto; padding: 32px 40px; }
+
+/* ── Section titles ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+.section-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+.section-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--border2);
+}
+
+/* ── Live metrics row ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.metric-card {
+  background: var(--s1);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.metric-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-color, var(--cyan));
+  opacity: 0.6;
+}
+.metric-card.amber  { --accent-color: var(--amber); }
+.metric-card.purple { --accent-color: var(--purple); }
+.metric-card.red    { --accent-color: var(--red); }
+
+.metric-card:hover { border-color: var(--border); }
+
+.metric-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent-color, var(--cyan));
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.metric-sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@keyframes flash {
+  0%,100% { background: var(--s1); }
+  30%      { background: rgba(0,240,200,0.06); }
+}
+.metric-card.updated { animation: flash 0.5s ease; }
+
+/* ── Two-column layout ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+/* ── Panel ── */
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 24px;
+}
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title .count-badge {
+  background: rgba(0,240,200,0.1);
+  color: var(--cyan);
+  padding: 1px 7px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+/* ── Process table ── */
+.proc-table { width: 100%; border-collapse: collapse; }
+.proc-table th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-align: left;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border2);
+}
+.proc-table th:not(:first-child) { text-align: right; }
+.proc-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,240,200,0.04);
+  font-size: 12px;
+  vertical-align: middle;
+}
+.proc-table td:not(:first-child) {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+.proc-table tr:last-child td { border-bottom: none; }
+.proc-table tr:hover td { background: rgba(0,240,200,0.02); }
+
+.proc-name {
+  font-weight: 600;
+  font-size: 12px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.proc-name .proc-icon {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.tier-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.tier-HIGH   { background: rgba(255,77,109,0.12); color: var(--red);    border: 1px solid rgba(255,77,109,0.25); }
+.tier-MEDIUM { background: rgba(255,184,0,0.1);   color: var(--amber);  border: 1px solid rgba(255,184,0,0.25); }
+.tier-LOW    { background: rgba(0,240,200,0.08);  color: var(--cyan);   border: 1px solid rgba(0,240,200,0.2); }
+
+/* ── Mini bar chart ── */
+.mini-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 80px;
+}
+.mini-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+/* ── Recommendations ── */
+.recs-list { display: flex; flex-direction: column; gap: 10px; }
+
+.rec-card {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 16px 18px;
+  position: relative;
+  cursor: default;
+  transition: border-color 0.25s, transform 0.2s;
+}
+.rec-card:hover {
+  border-color: rgba(0,240,200,0.2);
+  transform: translateX(4px);
+}
+.rec-card .priority-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 4px 0 0 4px;
+}
+.priority-CRITICAL { background: var(--red); }
+.priority-HIGH     { background: var(--amber); }
+.priority-MEDIUM   { background: var(--purple); }
+.priority-LOW      { background: var(--muted); }
+
+.rec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rec-proc-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rec-saving {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  background: rgba(0,240,200,0.08);
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+.rec-reasons {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.rec-action {
+  font-size: 12px;
+  color: var(--text);
+  padding: 8px 10px;
+  background: var(--s3);
+  border-radius: 3px;
+  border-left: 2px solid rgba(0,240,200,0.3);
+  line-height: 1.5;
+}
+.rec-action::before {
+  content: '→ ';
+  font-family: var(--font-mono);
+  color: var(--cyan);
+  font-size: 11px;
+}
+
+/* ── Anomaly section ── */
+.anomaly-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.anomaly-stat {
+  text-align: center;
+  padding: 16px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+}
+.anomaly-stat .val {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--amber);
+  display: block;
+}
+.anomaly-stat .lbl {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+}
+
+.anomaly-log {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.anomaly-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 60px 40px;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0,240,200,0.04);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  align-items: center;
+}
+.anomaly-row:last-child { border-bottom: none; }
+.anomaly-row .proc { color: var(--text); font-weight: 500; }
+.anomaly-row .w { color: var(--amber); }
+.anomaly-row .eff { color: var(--red); }
+
+/* ── History chart ── */
+.chart-wrap {
+  margin-bottom: 32px;
+}
+.bars-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100px;
+  padding: 0 4px;
+}
+.h-bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  background: rgba(0,240,200,0.15);
+  transition: height 0.6s ease, background 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+.h-bar:hover { background: rgba(0,240,200,0.4); }
+.h-bar.peak  { background: rgba(255,77,109,0.5); }
+.h-bar.latest { background: var(--cyan); }
+
+.chart-x {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 4px 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+/* ── Efficiency badge ── */
+.eff-map {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.eff-cell {
+  text-align: center;
+  padding: 12px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border2);
+  background: var(--s2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+.eff-cell.active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0,240,200,0.2);
+  background: rgba(0,240,200,0.08);
+  color: var(--cyan);
+}
+.eff-cell .grade { display: block; margin-bottom: 4px; }
+.eff-cell .count { font-size: 9px; color: var(--muted); font-weight: 400; }
+
+/* ── Live alert ── */
+#live-alert {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: var(--s1);
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 14px 18px;
+  font-size: 12px;
+  max-width: 320px;
+  transform: translateY(120px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+}
+#live-alert.show { transform: translateY(0); opacity: 1; }
+#live-alert.risk-HIGH   { border-color: rgba(255,77,109,0.5); }
+#live-alert.risk-MEDIUM { border-color: rgba(255,184,0,0.5); }
+.alert-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; margin-bottom: 6px; }
+.alert-body  { color: var(--muted); line-height: 1.5; }
+.alert-close {
+  position: absolute; top: 8px; right: 10px;
+  background: none; border: none;
+  color: var(--muted); cursor: pointer; font-size: 14px;
+}
+
+/* ── Skeleton loader ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 3px;
+  display: inline-block;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border2);
+  padding: 24px 40px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    SCEMARS<span style="color:var(--muted);">/ML</span>
+  </div>
+  <div class="nav-right">
+    <span id="clock" style="font-size:11px;">--:--:--</span>
+    <div class="status-chip offline" id="statusChip">
+      <span class="dot"></span>
+      <span id="statusLabel">OFFLINE</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="container">
+
+  <!-- ── Live metrics ── -->
+  <div style="margin-bottom:12px;margin-top:8px;">
+    <div class="section-header">
+      <span class="section-label">Live Feed</span>
+      <span class="section-title">System Energy Overview</span>
+      <div class="section-divider"></div>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);" id="topProcLabel">TOP: —</span>
+    </div>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card" id="mc-total">
+      <div class="metric-lbl">TOTAL DRAW</div>
+      <div class="metric-val" id="mv-total">—</div>
+      <div class="metric-sub" id="ms-total">Connecting…</div>
+    </div>
+    <div class="metric-card amber" id="mc-cpu">
+      <div class="metric-lbl">CPU POWER</div>
+      <div class="metric-val" id="mv-cpu">—</div>
+      <div class="metric-sub" id="ms-cpu">—</div>
+    </div>
+    <div class="metric-card purple" id="mc-gpu">
+      <div class="metric-lbl">GPU POWER (est.)</div>
+      <div class="metric-val" id="mv-gpu">—</div>
+      <div class="metric-sub" id="ms-gpu">Proxy of CPU load</div>
+    </div>
+    <div class="metric-card" id="mc-eff">
+      <div class="metric-lbl">EFFICIENCY SCORE</div>
+      <div class="metric-val" id="mv-eff">—</div>
+      <div class="metric-sub" id="ms-eff">—</div>
+    </div>
+  </div>
+
+  <!-- ── History chart ── -->
+  <div class="panel chart-wrap">
+    <div class="panel-title">WATTAGE HISTORY  <span style="color:var(--muted);font-size:9px;">(last 12 readings)</span></div>
+    <div class="bars-row" id="histBars"></div>
+    <div class="chart-x" id="histLabels"></div>
+  </div>
+
+  <!-- ── Main two-col: process table + recommendations ── -->
+  <div class="two-col">
+    <!-- Process table -->
+    <div class="panel">
+      <div class="panel-title">
+        TOP PROCESSES
+        <span class="count-badge" id="procCount">0</span>
+      </div>
+      <table class="proc-table">
+        <thead>
+          <tr>
+            <th>PROCESS</th>
+            <th>TIER</th>
+            <th>AVG W</th>
+            <th>CPU%</th>
+            <th>LOAD</th>
+          </tr>
+        </thead>
+        <tbody id="procTableBody">
+          <tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:20px 0;">Loading ML analysis…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="panel">
+      <div class="panel-title">
+        ML RECOMMENDATIONS
+        <span class="count-badge" id="recCount">0</span>
+      </div>
+      <div class="recs-list" id="recsList">
+        <div style="color:var(--muted);font-size:11px;">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Anomaly + efficiency distribution ── -->
+  <div class="two-col">
+    <!-- Anomaly detector -->
+    <div class="panel">
+      <div class="panel-title">ANOMALY DETECTOR</div>
+      <div class="anomaly-grid" id="anomalyStats">
+        <div class="anomaly-stat"><span class="val" id="an-baseline">—</span><span class="lbl">BASELINE W</span></div>
+        <div class="anomaly-stat"><span class="val" id="an-std">—</span><span class="lbl">STD DEV</span></div>
+        <div class="anomaly-stat"><span class="val" id="an-count" style="color:var(--red);">—</span><span class="lbl">ANOMALIES</span></div>
+      </div>
+      <div class="panel-title" style="margin-top:16px;margin-bottom:8px;">FLAGGED EVENTS</div>
+      <div class="anomaly-log" id="anomalyLog">
+        <div style="color:var(--muted);font-size:11px;">No data yet.</div>
+      </div>
+    </div>
+
+    <!-- Efficiency distribution -->
+    <div class="panel">
+      <div class="panel-title">EFFICIENCY DISTRIBUTION</div>
+      <div class="eff-map" id="effMap"></div>
+      <div style="margin-top:20px;">
+        <div class="panel-title" style="margin-bottom:12px;">POTENTIAL SAVINGS</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;">
+          <span style="font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--cyan);" id="savingW">—</span>
+          <span style="font-family:var(--font-mono);font-size:12px;color:var(--muted);">watts if top 5 recs applied</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;" id="savingAdvice">Run the monitor to gather data.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Session summary ── -->
+  <div class="panel" style="margin-bottom:32px;">
+    <div class="panel-title">SESSION SUMMARY</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;" id="sessionSummary">
+      <div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;">DATA POINTS</div><div style="font-family:var(--font-mono);font-size:20px;color:var(--text);" id="ss-points">—</div></div>
+      <div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;">SESSION SPAN</div><div style="font-family:var(--font-mono);font-size:20px;color:var(--text);" id="ss-span">—</div></div>
+      <div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;">AVG DRAW</div><div style="font-family:var(--font-mono);font-size:20px;color:var(--amber);" id="ss-avg">—</div></div>
+      <div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;">PEAK DRAW</div><div style="font-family:var(--font-mono);font-size:20px;color:var(--red);" id="ss-peak">—</div></div>
+      <div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;">DOMINANT PROCESS</div><div style="font-family:var(--font-mono);font-size:13px;color:var(--cyan);margin-top:4px;" id="ss-dominant">—</div></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Live alert toast -->
+<div id="live-alert">
+  <button class="alert-close" onclick="dismissAlert()">✕</button>
+  <div class="alert-title" id="alert-title">HIGH ENERGY PROCESS</div>
+  <div class="alert-body" id="alert-body">—</div>
+</div>
+
+<footer>
+  <span>SCEMARS · ML INTELLIGENCE LAYER</span>
+  <span id="genAt">—</span>
+  <span>© 2026 SCEMARS Technologies</span>
+</footer>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let mlLoaded = false;
+let lastHighProc = '';
+
+const GRADES = ['A+','A','B+','B','C','D'];
+const TIER_COLOR = { HIGH: '#ff4d6d', MEDIUM: '#ffb800', LOW: '#00f0c8' };
+const PRIORITY_MAP = p => p >= 6 ? 'CRITICAL' : p >= 4 ? 'HIGH' : p >= 2 ? 'MEDIUM' : 'LOW';
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
+}, 1000);
+
+// ── Connection status ─────────────────────────────────────────────────────────
+function setOnline(ok) {
+  const chip = document.getElementById('statusChip');
+  const lbl  = document.getElementById('statusLabel');
+  chip.className = 'status-chip ' + (ok ? 'online' : 'offline');
+  lbl.textContent = ok ? 'LIVE' : 'OFFLINE';
+}
+
+// ── Flash animation ───────────────────────────────────────────────────────────
+function flash(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('updated');
+  void el.offsetWidth;
+  el.classList.add('updated');
+}
+
+// ── Live metrics poll (2s) ────────────────────────────────────────────────────
+async function fetchMetrics() {
+  try {
+    const r = await fetch('/api/metrics');
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    setOnline(true);
+
+    document.getElementById('mv-total').textContent = d.total_draw_w + 'W';
+    document.getElementById('mv-cpu').textContent   = d.cpu_power_w  + 'W';
+    document.getElementById('mv-gpu').textContent   = d.gpu_power_w  + 'W';
+    document.getElementById('mv-eff').textContent   = d.efficiency_score;
+
+    document.getElementById('ms-total').textContent = `CPU ${d.cpu_usage_pct}%  ·  RAM ${d.ram_usage_pct}%`;
+    document.getElementById('ms-cpu').textContent   = `${d.cpu_usage_pct}% utilisation`;
+    document.getElementById('ms-eff').textContent   = d.battery_pct !== 'N/A'
+      ? `Battery ${d.battery_pct}% ${d.is_charging ? '⚡' : '🔋'}`
+      : 'No battery sensor';
+
+    document.getElementById('topProcLabel').textContent = `TOP: ${d.top_application}`;
+    ['mc-total','mc-cpu','mc-gpu','mc-eff'].forEach(flash);
+
+    // Live recommendation alert
+    fetchLive(d.top_application, d.cpu_usage_pct, d.total_draw_w);
+  } catch {
+    setOnline(false);
+  }
+}
+
+// ── Live recommendation ───────────────────────────────────────────────────────
+let alertTimer = null;
+async function fetchLive(proc, cpu, w) {
+  try {
+    const r = await fetch('/api/ml/live');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.risk_level === 'HIGH' && d.process !== lastHighProc) {
+      lastHighProc = d.process;
+      showAlert(d);
+    }
+  } catch {}
+}
+
+function showAlert(d) {
+  const el = document.getElementById('live-alert');
+  el.className = 'risk-' + d.risk_level;
+  document.getElementById('alert-title').textContent = d.risk_level + ' ENERGY PROCESS DETECTED';
+  document.getElementById('alert-body').innerHTML =
+    `<strong style="color:var(--text)">${d.process}</strong> is drawing heavily.<br>${d.action}`;
+  el.classList.add('show');
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(dismissAlert, 8000);
+}
+function dismissAlert() {
+  document.getElementById('live-alert').classList.remove('show');
+}
+
+// ── History chart ─────────────────────────────────────────────────────────────
+async function fetchHistory() {
+  try {
+    const r = await fetch('/api/history');
+    if (!r.ok) return;
+    const rows = await r.json();
+    if (!rows.length) return;
+
+    const barsEl   = document.getElementById('histBars');
+    const labelsEl = document.getElementById('histLabels');
+    barsEl.innerHTML   = '';
+    labelsEl.innerHTML = '';
+
+    const watts = rows.map(r => parseFloat(r.total_draw_w) || 0);
+    const maxW  = Math.max(...watts, 1);
+    const peak  = watts.indexOf(Math.max(...watts));
+
+    watts.forEach((w, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'h-bar' + (i === watts.length - 1 ? ' latest' : '') + (i === peak ? ' peak' : '');
+      bar.style.height = (w / maxW * 100) + '%';
+      bar.title = `${rows[i].timestamp}: ${w}W`;
+      barsEl.appendChild(bar);
+
+      const lbl = document.createElement('span');
+      const ts = (rows[i].timestamp || '').split(' ')[1] || '';
+      lbl.textContent = ts.slice(0, 5);
+      labelsEl.appendChild(lbl);
+    });
+  } catch {}
+}
+
+// ── ML report ─────────────────────────────────────────────────────────────────
+async function fetchML() {
+  try {
+    const r = await fetch('/api/ml/report');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.error) return;
+
+    mlLoaded = true;
+    renderProcessTable(d.top_processes);
+    renderRecommendations(d.recommendations);
+    renderAnomalies(d.anomaly_summary);
+    renderEffDist(d.system_summary.efficiency_distribution);
+    renderSession(d);
+
+    document.getElementById('genAt').textContent = 'ANALYSED: ' + d.generated_at;
+  } catch {}
+}
+
+// ── Render: process table ─────────────────────────────────────────────────────
+function renderProcessTable(procs) {
+  document.getElementById('procCount').textContent = procs.length;
+  const maxW = Math.max(...procs.map(p => p.avg_watts), 1);
+  const tbody = document.getElementById('procTableBody');
+  tbody.innerHTML = procs.map(p => {
+    const tierCls = 'tier-' + (p.avg_watts > 70 ? 'HIGH' : p.avg_watts > 45 ? 'MEDIUM' : 'LOW');
+    const tierLbl = p.avg_watts > 70 ? 'HIGH' : p.avg_watts > 45 ? 'MEDIUM' : 'LOW';
+    const barPct  = (p.avg_watts / maxW * 100).toFixed(1);
+    const col     = TIER_COLOR[tierLbl];
+    return `<tr>
+      <td>
+        <div class="proc-name">
+          <span class="proc-icon" style="background:${col};color:${col};"></span>
+          ${p.name}
+        </div>
+      </td>
+      <td><span class="tier-badge ${tierCls}">${tierLbl}</span></td>
+      <td style="color:${col};font-family:var(--font-mono)">${p.avg_watts}W</td>
+      <td style="font-family:var(--font-mono)">${p.avg_cpu_pct}%</td>
+      <td>
+        <div class="mini-bar-wrap">
+          <div class="mini-bar-track">
+            <div class="mini-bar-fill" style="width:${barPct}%;background:${col};"></div>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted)">${barPct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render: recommendations ───────────────────────────────────────────────────
+function renderRecommendations(recs) {
+  document.getElementById('recCount').textContent = recs.length;
+  if (!recs.length) {
+    document.getElementById('recsList').innerHTML =
+      '<div style="color:var(--muted);font-size:12px;">No issues detected — system looks efficient!</div>';
+    return;
+  }
+  document.getElementById('recsList').innerHTML = recs.map(r => {
+    const pri = PRIORITY_MAP(r.priority);
+    return `<div class="rec-card">
+      <div class="priority-bar priority-${pri}"></div>
+      <div class="rec-header">
+        <span class="rec-proc-name">${r.process}</span>
+        <span class="rec-saving">−${r.estimated_saving_w}W est.</span>
+      </div>
+      <div class="rec-reasons">${r.reasons.join(' ')}</div>
+      <div class="rec-action">${r.action}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: anomalies ─────────────────────────────────────────────────────────
+function renderAnomalies(a) {
+  document.getElementById('an-baseline').textContent = a.baseline_mean_w + 'W';
+  document.getElementById('an-std').textContent      = '±' + a.baseline_std_w + 'W';
+  document.getElementById('an-count').textContent    = a.anomaly_count;
+
+  const log = document.getElementById('anomalyLog');
+  if (!a.anomalies.length) {
+    log.innerHTML = '<div style="color:var(--muted);font-size:11px;font-family:var(--font-mono);">No anomalies detected.</div>';
+    return;
+  }
+  log.innerHTML = a.anomalies.map(ev =>
+    `<div class="anomaly-row">
+      <span style="color:var(--muted)">${ev.timestamp.split(' ')[1] || ''}</span>
+      <span class="proc">${ev.process}</span>
+      <span class="w">${ev.watts}W</span>
+      <span class="eff">${ev.efficiency}</span>
+    </div>`
+  ).join('');
+}
+
+// ── Render: efficiency distribution ──────────────────────────────────────────
+function renderEffDist(dist) {
+  const total = Object.values(dist).reduce((a,b) => a + b, 0) || 1;
+  document.getElementById('effMap').innerHTML = GRADES.map(g => {
+    const cnt = dist[g] || 0;
+    const pct = Math.round(cnt / total * 100);
+    const active = cnt > 0 ? 'active' : '';
+    return `<div class="eff-cell ${active}">
+      <span class="grade">${g}</span>
+      <span class="count">${cnt} (${pct}%)</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: session summary ───────────────────────────────────────────────────
+function renderSession(d) {
+  document.getElementById('ss-points').textContent   = d.data_points;
+  document.getElementById('ss-span').textContent     = d.session_span_minutes + 'm';
+  document.getElementById('ss-avg').textContent      = d.system_summary.avg_total_draw_w + 'W';
+  document.getElementById('ss-peak').textContent     = d.system_summary.max_total_draw_w + 'W';
+  document.getElementById('ss-dominant').textContent = d.system_summary.dominant_process;
+  document.getElementById('savingW').textContent     = d.potential_saving_w + 'W';
+
+  // Pick advice for dominant eff score
+  const dist = d.system_summary.efficiency_distribution;
+  const dominant = Object.entries(dist).sort((a,b) => b[1]-a[1])[0]?.[0] || 'A';
+  const advice = d.efficiency_advice?.[dominant] || 'System data analysed.';
+  document.getElementById('savingAdvice').textContent = advice;
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+fetchMetrics();
+fetchHistory();
+fetchML();
+
+setInterval(fetchMetrics, 2000);
+setInterval(fetchHistory, 10000);
+setInterval(fetchML,      30000);  // ML is cached server-side for 30s anyway
+</script>
+</body>
+</html>
