@@ -1,0 +1,323 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+  html { scroll-behavior: smooth; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #080d1a; --surface: #0d1526; --surface2: #111e35;
+    --accent: #00e5ff; --accent2: #7c3aed; --accent3: #10b981;
+    --text: #e2eaf8; --muted: #6b82a8; --border: rgba(0,229,255,0.15);
+  }
+  body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 48px; background: rgba(8,13,26,0.85);
+    backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+  }
+  .logo { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+  .logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; letter-spacing: 0.5px; }
+  .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+  @keyframes metric-flash { 0%,100%{background:var(--surface2)} 40%{background:rgba(0,229,255,0.12)} }
+  .metric-updated { animation: metric-flash 0.6s ease; }
+  .nav-cta { font-size: 13px; padding: 8px 20px; background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; cursor: pointer; font-family: 'Space Mono', monospace; transition: all 0.2s; letter-spacing: 0.5px; }
+  .nav-cta:hover { background: var(--accent); color: #080d1a; }
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 80px 48px; text-align: center; }
+  .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%); }
+  .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  .orb1 { width: 500px; height: 500px; background: rgba(0,229,255,0.08); top: -100px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(124,58,237,0.1); bottom: -80px; right: -80px; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); border: 1px solid var(--border); padding: 6px 16px; border-radius: 100px; margin-bottom: 32px; background: rgba(0,229,255,0.05); }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  .hero h1 { font-size: clamp(36px, 6vw, 72px); font-weight: 700; line-height: 1.1; letter-spacing: -1px; margin-bottom: 24px; max-width: 900px; }
+  .hero h1 .hl { color: var(--accent); }
+  .hero p { font-size: 17px; color: var(--muted); max-width: 580px; line-height: 1.7; margin-bottom: 48px; }
+  .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { padding: 14px 32px; background: var(--accent); color: #080d1a; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.2s; box-shadow: 0 0 30px rgba(0,229,255,0.3); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,229,255,0.5); }
+  .btn-ghost { padding: 14px 32px; background: transparent; color: var(--text); border: 1px solid rgba(226,234,248,0.2); border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.2s; }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .stat-item { background: var(--bg); padding: 36px 40px; text-align: center; }
+  .stat-num { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; color: var(--accent); display: block; }
+  .stat-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .section { padding: 100px 48px; max-width: 1200px; margin: 0 auto; }
+  .section-label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+  .section-title { font-size: clamp(28px, 4vw, 44px); font-weight: 700; line-height: 1.15; margin-bottom: 20px; }
+  .section-sub { font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 560px; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px; }
+  .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px; position: relative; overflow: hidden; transition: all 0.3s; }
+  .feature-card:hover { border-color: rgba(0,229,255,0.4); transform: translateY(-4px); }
+  .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity 0.3s; }
+  .feature-card:hover::before { opacity: 1; }
+  .feat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 20px; }
+  .feat-icon.cyan { background: rgba(0,229,255,0.1); }
+  .feat-icon.purple { background: rgba(124,58,237,0.15); }
+  .feat-icon.green { background: rgba(16,185,129,0.1); }
+  .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+  .feature-card p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+  .dashboard-section { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; margin-top: 60px; position: relative; overflow: hidden; }
+  .conn-badge { display: flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 100px; border: 1px solid; transition: all 0.4s; }
+  .conn-badge.online  { color: var(--accent3); background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); }
+  .conn-badge.offline { color: #f87171; background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.25); }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  .dash-title { font-size: 18px; font-weight: 600; }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent3); background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 100px; border: 1px solid rgba(16,185,129,0.2); }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); animation: pulse 1.5s infinite; }
+  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .dash-metric { background: var(--surface2); border-radius: 12px; padding: 20px 18px; border: 1px solid var(--border); }
+  .metric-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-family: 'Space Mono', monospace; }
+  .metric-val { font-size: 26px; font-weight: 700; font-family: 'Space Mono', monospace; }
+  .metric-val.cyan { color: var(--accent); }
+  .metric-val.green { color: var(--accent3); }
+  .metric-val.purple { color: #a78bfa; }
+  .metric-val.amber { color: #fbbf24; }
+  .metric-change { font-size: 12px; margin-top: 4px; color: var(--accent3); }
+  .chart-area { position: relative; height: 120px; margin-bottom: 4px; }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 100%; }
+  .bar { flex: 1; border-radius: 4px 4px 0 0; background: rgba(0,229,255,0.2); transition: height 0.5s ease; cursor: pointer; }
+  .bar:hover { background: rgba(0,229,255,0.5); }
+  .bar.active { background: var(--accent); }
+  .reco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px; }
+  .reco-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; transition: all 0.3s; }
+  .reco-card:hover { border-color: rgba(0,229,255,0.35); transform: translateY(-3px); }
+  .reco-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .reco-app { display: flex; align-items: center; gap: 12px; }
+  .app-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .app-name { font-size: 15px; font-weight: 600; }
+  .app-category { font-size: 12px; color: var(--muted); }
+  .reco-score { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; color: var(--accent); }
+  .reco-score span { font-size: 11px; color: var(--muted); display: block; text-align: right; }
+  .reco-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .reco-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 3px 10px; border-radius: 100px; font-family: 'Space Mono', monospace; }
+  .tag.green { background: rgba(16,185,129,0.1); color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+  .tag.cyan { background: rgba(0,229,255,0.08); color: var(--accent); border: 1px solid rgba(0,229,255,0.15); }
+  .tag.purple { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .tag.amber { background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+  .steps { display: flex; gap: 0; margin-top: 60px; position: relative; }
+  .steps::before { content: ''; position: absolute; top: 28px; left: 28px; right: 28px; height: 1px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3)); opacity: 0.3; z-index: 0; }
+  .step { flex: 1; text-align: center; padding: 0 24px; position: relative; z-index: 1; }
+  .step-num { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); margin: 0 auto 20px; }
+  .step h4 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .cta-section { text-align: center; padding: 100px 48px; background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,229,255,0.06) 0%, transparent 70%); border-top: 1px solid var(--border); }
+  .cta-section h2 { font-size: clamp(28px, 4vw, 52px); font-weight: 700; margin-bottom: 20px; }
+  .cta-section p { font-size: 16px; color: var(--muted); margin-bottom: 40px; }
+  footer { border-top: 1px solid var(--border); padding: 40px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+  .footer-logo { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--accent); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { color: var(--muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--accent); }
+  .fade-in { opacity: 0; transform: translateY(24px); transition: all 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+
+<div class="hero" id="section-hero">
+  <div class="hero-grid"></div>
+  <div class="hero-orb orb1"></div>
+  <div class="hero-orb orb2"></div>
+  <div class="hero-badge"><span class="badge-dot"></span>AI-Powered Energy Intelligence</div>
+  <h1>Smart <span class="hl">Energy Monitoring</span><br>for Every Computer</h1>
+  <p>Real-time power tracking, AI-driven app recommendations, and intelligent efficiency insights — all in one unified platform.</p>
+  <div class="hero-btns">
+  </div>
+</div>
+
+
+<div class="section" id="section-overview">
+  <div class="section-label fade-in">Core capabilities</div>
+  <h2 class="section-title fade-in">Everything your computer<br>needs to run smarter</h2>
+  <p class="section-sub fade-in">From per-process power attribution to AI-curated app alternatives, SCEMARS turns your machine into an efficient, self-optimizing system.</p>
+  <div class="features-grid">
+    <div class="feature-card fade-in"><div class="feat-icon cyan">⚡</div><h3>Real-Time Power Tracking</h3><p>Monitor CPU, GPU, and peripheral energy draw with millisecond precision. Identify power spikes and correlate them to running processes instantly.</p></div>
+    <div class="feature-card fade-in"><div class="feat-icon purple">🤖</div><h3>AI App Recommendations</h3><p>Our recommendation engine analyzes your workflow and suggests lighter, equally capable alternatives — saving energy without sacrificing productivity.</p></div>
+    <div class="feature-card fade-in"><div class="feat-icon green">📊</div><h3>Usage Analytics</h3><p>Weekly and monthly energy reports, trend charts, and cost breakdowns in local currency. Know exactly where your power budget goes.</p></div>
+    <div class="feature-card fade-in"><div class="feat-icon cyan">🔔</div><h3>Smart Alerts</h3><p>Set custom thresholds for power draw and receive instant notifications when your system strays from optimal operating conditions.</p></div>
+    <div class="feature-card fade-in"><div class="feat-icon purple">🌐</div><h3>Multi-Device Sync</h3><p>Manage all your workstations, laptops, and servers from a single dashboard. Unified energy reporting across your entire fleet.</p></div>
+    <div class="feature-card fade-in"><div class="feat-icon green">🔒</div><h3>Privacy First</h3><p>All telemetry is processed on-device. No personal data leaves your machine — just anonymized efficiency metrics for AI training.</p></div>
+  </div>
+</div>
+
+<div style="padding: 0 48px; max-width: 1200px; margin: 0 auto;" id="section-dashboard">
+  <div class="dashboard-section fade-in">
+    <div class="dash-header">
+      <div class="dash-title">System Energy Overview</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="live-badge"><span class="live-dot"></span>Live</div>
+        <div class="conn-badge offline" id="connBadge"><span class="conn-dot"></span><span id="connLabel">Offline</span></div>
+      </div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-metric"><div class="metric-label">TOTAL DRAW</div><div class="metric-val cyan" id="totalDraw">—</div><div class="metric-change" id="drawChange">Connecting…</div></div>
+      <div class="dash-metric"><div class="metric-label">CPU POWER</div><div class="metric-val purple" id="cpuPower">—</div><div class="metric-change" style="color:#a78bfa;" id="cpuChange">—</div></div>
+      <div class="dash-metric"><div class="metric-label">GPU POWER (est.)</div><div class="metric-val amber" id="gpuPower">—</div><div class="metric-change" style="color:#fbbf24;" id="gpuChange">—</div></div>
+      <div class="dash-metric"><div class="metric-label">EFFICIENCY SCORE</div><div class="metric-val green" id="effScore">—</div><div class="metric-change" id="effChange">—</div></div>
+    </div>
+    <div class="chart-area"><div class="bars" id="barsContainer"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:8px;" id="barLabels"></div>
+  </div>
+</div>
+
+
+<div class="cta-section fade-in">
+  <h2>Ready to power down waste?</h2>
+  <p>Join 142,000+ users who've reclaimed their energy budget with SCEMARS.</p>
+  <button class="btn-primary" style="font-size:15px;padding:16px 40px;">Get Started — It's Free</button>
+</div>
+
+<footer>
+  <div class="footer-logo">SCEMARS.</div>
+  <div class="footer-links"><a href="#">Privacy</a>
+    <a href="#">Docs</a><a href="#">API</a>
+    <a href="#">Status</a>
+    <a href="#">Contact</a>
+  </div>
+  <div>© 2026 SCEMARS Technologies</div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(els => {
+    els.forEach(el => { if (el.isIntersecting) el.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  function animateCount(id, target, suffix) {
+    const el = document.getElementById(id);
+    let current = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = Math.round(current).toLocaleString() + suffix;
+      if (current >= target) clearInterval(timer);
+    }, 20);
+  }
+  setTimeout(() => {
+    animateCount('s1', 142000, '');
+    animateCount('s2', 38, 'kWh');
+    animateCount('s3', 2400000, '');
+    animateCount('s4', 34, '%');
+  }, 800);
+
+  const hours = ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM'];
+  const baseWatts = [42,55,70,85,92,88,76,80,95,89,72,60];
+  const barsContainer = document.getElementById('barsContainer');
+  const labelsContainer = document.getElementById('barLabels');
+  hours.forEach((h, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar' + (i === 9 ? ' active' : '');
+    bar.style.height = '0';
+    bar.title = h + ': ' + baseWatts[i] + 'W';
+    barsContainer.appendChild(bar);
+    const label = document.createElement('span');
+    label.textContent = h;
+    labelsContainer.appendChild(label);
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.bar').forEach((b, i) => {
+      setTimeout(() => { b.style.height = (baseWatts[i] / 100 * 100) + '%'; }, i * 60);
+    });
+  }, 500);
+
+  // ── Live API integration ──────────────────────────────────────────────────
+  const API_BASE = '';   // relative paths — served by the same Flask server
+
+  function setConnected(ok) {
+    const badge = document.getElementById('connBadge');
+    const label = document.getElementById('connLabel');
+    badge.className = 'conn-badge ' + (ok ? 'online' : 'offline');
+    label.textContent = ok ? 'Backend Connected' : 'Offline';
+  }
+
+  function flash(id) {
+    const el = document.getElementById(id)?.closest('.dash-metric');
+    if (!el) return;
+    el.classList.remove('metric-updated');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('metric-updated');
+  }
+
+  async function fetchMetrics() {
+    try {
+      const res = await fetch(API_BASE + '/api/metrics');
+      if (!res.ok) throw new Error('non-2xx');
+      const d = await res.json();
+      setConnected(true);
+
+      document.getElementById('totalDraw').textContent = d.total_draw_w + 'W';  flash('totalDraw');
+      document.getElementById('cpuPower').textContent  = d.cpu_power_w  + 'W';  flash('cpuPower');
+      document.getElementById('gpuPower').textContent  = d.gpu_power_w  + 'W';  flash('gpuPower');
+      document.getElementById('effScore').textContent  = d.efficiency_score;     flash('effScore');
+
+      document.getElementById('drawChange').textContent = `CPU ${d.cpu_usage_pct}% · RAM ${d.ram_usage_pct}%`;
+      document.getElementById('cpuChange').textContent  = `${d.cpu_usage_pct}% utilization`;
+      document.getElementById('gpuChange').textContent  = `proxy of CPU load`;
+
+      const batt = d.battery_pct !== 'N/A'
+        ? `Battery ${d.battery_pct}% ${d.is_charging ? '⚡ charging' : '🔋'}`
+        : 'No battery sensor';
+      document.getElementById('effChange').textContent = batt;
+
+      document.querySelector('.dash-title').textContent =
+        `System Energy Overview  ·  Top: ${d.top_application}`;
+    } catch (e) {
+      setConnected(false);
+    }
+  }
+
+  async function fetchHistory() {
+    try {
+      const res = await fetch(API_BASE + '/api/history');
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows.length) return;
+
+      const bars   = document.querySelectorAll('.bar');
+      const labels = document.querySelectorAll('#barLabels span');
+
+      rows.forEach((row, i) => {
+        if (i >= bars.length) return;
+        const w = parseFloat(row.total_draw_w) || 0;
+        bars[i].style.height = Math.min(w, 120) / 120 * 100 + '%';
+        bars[i].title = row.timestamp + ': ' + w + 'W';
+        if (labels[i]) {
+          const ts = row.timestamp.split(' ')[1] || '';
+          labels[i].textContent = ts.slice(0,5);
+        }
+      });
+    } catch (_) {}
+  }
+
+  // Poll every 2 s for live metrics, 10 s for history bars
+  fetchMetrics();
+  fetchHistory();
+  setInterval(fetchMetrics, 2000);
+  setInterval(fetchHistory, 10000);
+
+  // ── Nav active-link highlight on scroll ──────────────────────────────────
+  const sections = [
+    { id: 'section-overview',       link: 'Overview' },
+    { id: 'section-dashboard',      link: 'Dashboard' },
+    { id: 'section-recommendations',link: 'Recommendations' },
+    { id: 'section-analytics',      link: 'Analytics' },
+  ];
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  function updateActiveNav() {
+    let current = '';
+    sections.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el && window.scrollY >= el.offsetTop - 120) current = s.link;
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.textContent.trim() === current);
+    });
+  }
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
+  updateActiveNav();
+</script>
